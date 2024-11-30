@@ -21,9 +21,14 @@ class ProductService:
         return Response("OK", 200, None, "Validation Successful")
 
     def create_product(self, name: str, price: float, model: str, seller: Seller) -> Response:
+        # بررسی اینکه آیا seller در دسترس است و از نوع صحیح است
+        if not seller or not isinstance(seller, Seller):
+            return Response("NOT_OK", 601, None, "User must be logged in as a seller.")
+
         valid_response = self.validation(name, price, model)
         if valid_response.status != "OK":
             return valid_response
+
         product_id = generate_id()
         product = Product(product_id, name, price, model, seller)
         self.products.append(product)  # اضافه کردن به لیست محصولات
