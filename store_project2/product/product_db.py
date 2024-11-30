@@ -1,6 +1,8 @@
+from itertools import product
+
 import mysql.connector
 from product.Product import Product
-
+from util.response import Response
 
 class ProductDB:
     def __init__(self, db_config):
@@ -11,41 +13,53 @@ class ProductDB:
             password=db_config.get('DATABASE', 'password'),
         )
 
-    def save(self, product: Product) -> bool:
+    def save(self, product: Product) -> Response:
+        cursor = self.connection.cursor()
         try:
-            cursor = self.connection.cursor()
-            query = '''insert into mst.TBL_PRODUCTS(product_id, name, price, model, seller_id)
-             values (%s, %s, %s, %s, %s)'''
-            value = (product.product_id, product.name, product.price, product.model, product.seller.id)
-            cursor.exeute(query, value)
+            query = '''INSERT INTO products.TBL_PRODUCTS(id, name, price, model, seller_id)
+                   VALUES (%s, %s, %s, %s, %s)'''
+            values = (product.product_id, product.name, product.price, product.model, product.seller.id)
+            cursor.execute(query, values)
             self.connection.commit()
-            return True
+            return Response("ok", 200, product, "save product successfully")
         except mysql.connector.Error as err:
             print(f"Connection Error {err}")
-            return False
+            return Response("Connection Error", 500, product, "save product failed")
         finally:
             cursor.close()
 
-    def delete(self, product_id):
+    def delete(self, id) -> Response:
         cursor = self.connection.cursor()
         try:
-            query = '''delete from tbl_product where id = %s'''
+            query = '''delete from products.TBL_PRODUCTS where id = %s'''
             value = (id,)
-            cursor.exeute(query, value)
+            cursor.execute(query, value)
             self.connection.commit()
+            return Response("ok", 200, product, "delete product successfully")
         except mysql.connector.Error as err:
             print(f"Connection Error {err}")
+            return Response("Connection Error", 500, product, "delete product failed")
+        finally:
+            cursor.close()
+
+    def update(self, price: float) -> Response:
+        cursor = self.connection.cursor()
+        try:
+            query = '''UPDATE products.TBL_PRODUCTS set price = %s where id = %s'''
+            value = (price,)
+            cursor.execute(query, value)
+            self.connection.commit()
+            return Response("ok", 200, product, "update product successfully")
+        except mysql.connector.Error as err:
+            print(f"Connection Error {err}")
+            return Response("Connection Error", 500, product, "update product failed")
+        finally:
+            cursor.close()
 
     def close_connection(self):
         if self.connection.is_connected():
-            self.connection.close()  # بستن اتصال
+            self.connection.close()
 
-    def update(self, price) -> Product:
-        cursor = self.connection.cursor()
-        try:
-            query = '''UPDATE tbl_product set price = %s'''
-            value = (price,)
-            cursor.exeute(query, value)
-            self.connection.commit()
-        except mysql.connector.Error as err:
-            print(f"Connection Error {err}")
+    def __del__(self):
+        """Ensure the connection is closed when the object is deleted."""
+        self.close_connection()
