@@ -27,30 +27,13 @@ def validate_user_input(prompt: str, min_length: int, error_message: str) -> str
     return PanelCreate.validate_input(prompt, min_length, error_message)
 
 
-def create_user(role: str, db_config) -> Response:
+def create_user(db_config) -> Response:
     """Create a buyer or seller based on role."""
     try:
         username = validate_user_input("Enter Your Username: ", 5, "The Username does not"
                                                                    " meet strength requirements.")
         password = validate_user_input("Enter Your Password: ", 5, "The Password does not"
                                                                    " meet strength requirements.")
-
-        if role == "buyer":
-            address = validate_user_input("Enter Your Address: ", 4, "The Address "
-                                                                     "is not valid.")
-            city = validate_user_input("Enter Your City: ", 3, "The City is not valid.")
-            nationality_code = validate_user_input("Enter Your Nationality Code: ", 10,
-                                                   "The nationality code is not valid.")
-            service = BuyerService(db_config)
-            return service.save(username, password, nationality_code, address, city)
-
-        elif role == "seller":
-            shop_name = validate_user_input("Enter Your Shop Name: ", 4, "The Shop Name "
-                                                                         "is not valid.")
-            nationality_code = validate_user_input("Enter Your Nationality Code: ", 10,
-                                                   "The nationality code is not valid.")
-            service = SellerService(db_config)
-            return service.save(username, password, nationality_code, shop_name)
     except Exception as ex:
         return Response("NOT_OK", 601, None, str(ex))
 
@@ -73,6 +56,33 @@ def create_product(current_user) -> Response:
     except ValueError:
         return Response("NOT_OK", 601, None, "Invalid price entered.")
 
+def create_buyer(db_config) -> Response:
+    try:
+        username = validate_user_input("Enter Your Username: ", 5, "The Username does not meet strength requirements.")
+        password = validate_user_input("Enter Your Password: ", 5, "The password does not meet strength requirements.")
+        address = validate_user_input("Enter Your Address: ", 4, "The Address is not valid.")
+        city = validate_user_input("Enter Your City: ", 3, "The City is not valid.")
+        nationality_code = validate_user_input("Enter Your Nationality Code: ", 10,
+                                               "The nationality code is not valid.")
+
+        service = BuyerService(db_config)
+        return service.save(username, password, nationality_code, address, city)
+    except Exception as ex:
+        return Response("NOT_OK", 601, None, str(ex))
+
+
+def create_seller(db_config) -> Response:
+    try:
+        username = validate_user_input("Enter Your Username: ", 5, "The Username does not meet strength requirements.")
+        password = validate_user_input("Enter Your Password: ", 5, "The password does not meet strength requirements.")
+        shop_name = validate_user_input("Enter Your Shop Name: ", 4, "The Shop Name is not valid.")
+        nationality_code = validate_user_input("Enter Your Nationality Code: ", 10,
+                                               "The nationality code is not valid.")
+
+        service = SellerService(db_config)
+        return service.save(username, password, nationality_code, shop_name)
+    except Exception as ex:
+        return Response("NOT_OK", 601, None, str(ex))
 
 def show_product_list() -> None:
     """Display available products."""
@@ -112,20 +122,20 @@ panel = PanelCreate(UserService(db_config=config))
 
 actions = {
     1: lambda: login_user(config),
-    3: show_product_list,
-    4: lambda: create_user("buyer", config),
-    5: lambda: create_user("seller", config),
-    6: lambda: create_product(panel.current_user),
+    2: show_product_list,
+    3: lambda: create_buyer(config),
+    4: lambda: create_seller(config),
+    5: lambda: create_product(panel.current_user),
 }
 
 print("Welcome to the Store Management System")
 while True:
     print("1 - Login")
-    print("3 - Show List of Products")
-    print("4 - Create Buyer")
-    print("5 - Create Seller")
-    print("6 - Create Product")
-    print("7 - Exit")
+    print("2 - Show List of Products")
+    print("3 - Create Buyer")
+    print("4 - Create Seller")
+    print("5 - Create Product")
+    print("6 - Exit")
 
     try:
         user_input = int(input("Enter Action #: "))
@@ -133,7 +143,7 @@ while True:
             response = actions[user_input]()
             if response:
                 print(f"Response: {response}")
-        elif user_input == 7:
+        elif user_input == 6:
             print("Exiting...")
             break
         else:
