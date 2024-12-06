@@ -28,7 +28,6 @@ def validate_user_input(prompt: str, min_length: int, error_message: str) -> str
 
 
 def create_user(db_config) -> Response:
-    """Create a buyer or seller based on role."""
     try:
         username = validate_user_input("Enter Your Username: ", 5, "The Username does not"
                                                                    " meet strength requirements.")
@@ -106,11 +105,29 @@ def login_user(config) -> Response:
     if reaction.status == "OK":
         panel.current_user = reaction.data
         print(f"Welcome {panel.current_user.username}!")
+        return Response("ok", 200, reaction, "login was successful")
     else:
         print("Login failed: ", reaction.message)
+        return Response("not ok", 601, reaction, "login was not successful.")
+
+def signin_user(config) -> Response:
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+    nationality_code = input("Enter your nationality code: ")
+    user_service = UserService(db_config=config)
+
+    reaction = user_service.signin(username, password, nationality_code)
+    if reaction.status == "OK":
+        panel.current_user = reaction.data
+        print(f"Registration was successful {panel.current_user.username}!")
+        return Response("ok", 200, reaction, "Registration was successful")
+    else:
+        print("signup failed: ", reaction.message)
+        return Response("not ok", 601, reaction, "Registration was not successful.")
 
 
-# Initialize databases and settings
+""" Initialize databases and settings """
+
 config = get_config("../config/config.ini")
 startup = config.get("INITIAL", "startup")
 
@@ -122,20 +139,22 @@ panel = PanelCreate(UserService(db_config=config))
 
 actions = {
     1: lambda: login_user(config),
-    2: show_product_list,
+    2: lambda: signin_user(config),
     3: lambda: create_buyer(config),
     4: lambda: create_seller(config),
     5: lambda: create_product(panel.current_user),
+    6: show_product_list,
 }
 
 print("Welcome to the Store Management System")
 while True:
     print("1 - Login")
-    print("2 - Show List of Products")
+    print("2 - Sign-in")
     print("3 - Create Buyer")
     print("4 - Create Seller")
     print("5 - Create Product")
-    print("6 - Exit")
+    print("6 - Show List of Products")
+    print("7 - Exit")
 
     try:
         user_input = int(input("Enter Action #: "))
@@ -143,7 +162,7 @@ while True:
             response = actions[user_input]()
             if response:
                 print(f"Response: {response}")
-        elif user_input == 6:
+        elif user_input == 7:
             print("Exiting...")
             break
         else:
@@ -154,4 +173,4 @@ while True:
         print("\nExiting program...")
         break
     finally:
-        print("#" * 50)
+        print("#" * 20)
