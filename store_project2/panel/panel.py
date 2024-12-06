@@ -27,16 +27,6 @@ def validate_user_input(prompt: str, min_length: int, error_message: str) -> str
     return PanelCreate.validate_input(prompt, min_length, error_message)
 
 
-def create_user(db_config) -> Response:
-    try:
-        username = validate_user_input("Enter Your Username: ", 5, "The Username does not"
-                                                                   " meet strength requirements.")
-        password = validate_user_input("Enter Your Password: ", 5, "The Password does not"
-                                                                   " meet strength requirements.")
-    except Exception as ex:
-        return Response("NOT_OK", 601, None, str(ex))
-
-
 def create_product(current_user) -> Response:
     """Create a new product by a logged-in seller."""
     if not current_user or current_user.role != 'seller':
@@ -95,11 +85,11 @@ def show_product_list() -> None:
             print(f"- {product.name}: {product.price} {product.currency}")
 
 
-def login_user(config) -> Response:
+def login_user(db_config) -> Response:
     """Log in the user."""
     username = input("Enter your username: ")
     password = input("Enter your password: ")
-    user_service = UserService(db_config=config)
+    user_service = UserService(db_config=db_config)
 
     reaction = user_service.login(username, password)
     if reaction.status == "OK":
@@ -110,19 +100,20 @@ def login_user(config) -> Response:
         print("Login failed: ", reaction.message)
         return Response("not ok", 601, reaction, "login was not successful.")
 
-def signin_user(config) -> Response:
-    username = input("Enter your username: ")
-    password = input("Enter your password: ")
+def signin_user(db_config) -> Response:
+    username = validate_user_input("Enter your username: ", 5, "The Username does not meet requirements.")
+    password = validate_user_input("Enter your password: ", 5, "The password does not meet requirements.")
     nationality_code = input("Enter your nationality code: ")
-    user_service = UserService(db_config=config)
 
+    user_service = UserService(db_config=db_config)
     reaction = user_service.signin(username, password, nationality_code)
+
     if reaction.status == "OK":
         panel.current_user = reaction.data
         print(f"Registration was successful {panel.current_user.username}!")
         return Response("ok", 200, reaction, "Registration was successful")
     else:
-        print("signup failed: ", reaction.message)
+        print("Signup failed: ", reaction.message)
         return Response("not ok", 601, reaction, "Registration was not successful.")
 
 
@@ -173,4 +164,4 @@ while True:
         print("\nExiting program...")
         break
     finally:
-        print("#" * 20)
+        print("#" * 50)
