@@ -36,15 +36,19 @@ def read_file_and_write_in_db_buyer(config) -> None:
 
 def create_product(seller) -> Response:
     """Create a new product by a logged-in seller."""
+    # چک کردن اینکه آیا فروشنده لاگین کرده است
+    if seller is None or not hasattr(seller, 'username', 'password', 'nationality_code'):  # بررسی می‌کنیم که seller معتبر است
+        return Response("NOT_OK", 601, None, "You must be logged in to create a product.")
+
     try:
-        name = validate_input("Enter Your Product Name: ", 5, "The Name does not meet "
-                                                              "strength requirements.")
+        name = validate_input("Enter Your Product Name: ", 5, "The Name does not meet strength requirements.")
         price = float(input("Enter Your Price: "))
         if price < 0:
             return Response("NOT_OK", 601, price, "The Price cannot be negative.")
 
         model = validate_input("Enter Your Product Model: ", 5, "The Model is not valid.")
-        return ProductService.create_product(name, price, model, seller)
+        return ProductService.create_product(name, price, model,
+                                             seller)  # استفاده از seller که اطلاعات فروشنده را نمایندگی می‌کند
     except ValueError as ve:
         return Response("NOT_OK", 601, None, str(ve))
 
