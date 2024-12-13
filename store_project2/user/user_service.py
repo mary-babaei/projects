@@ -16,17 +16,6 @@ class UserService:
             raise ValueError(error_message)
         return value
 
-    def signin(self):
-        try:
-            username = self.validate_input("Enter User username: ", 5,
-                                           "The Username does not meet strength requirements.")
-            password = self.validate_input("Enter your password: ", 5,
-                                           "The password does not meet strength requirements.")
-            nationality_code = self.validate_input("Enter Your Nationality Code: ", 10,
-                                                   "The nationality code is not valid.")
-            return self.save(username, password, nationality_code)
-        except ValueError as ve:
-            return Response("NOT_OK", 601, "User not created", str(ve))
 
     def save(self, username: str, password: str, nationality_code: str) -> Response:
         user = User(username, password, nationality_code)
