@@ -33,11 +33,12 @@ def read_file_and_write_in_db_buyer(config) -> None:
             except Exception as e:
                 print(f"Error saving buyer: {str(e)}")
 
-
-def create_product(seller) -> Response:
+def create_product() -> Response:
     """Create a new product by a logged-in seller."""
-    # چک کردن اینکه آیا فروشنده لاگین کرده است
-    if seller is None or not hasattr(seller, 'username', 'password', 'nationality_code'):  # بررسی می‌کنیم که seller معتبر است
+    global current_user
+
+    # Check if the seller is logged in
+    if current_user is None:  # Verify that a user is logged in
         return Response("NOT_OK", 601, None, "You must be logged in to create a product.")
 
     try:
@@ -47,8 +48,7 @@ def create_product(seller) -> Response:
             return Response("NOT_OK", 601, price, "The Price cannot be negative.")
 
         model = validate_input("Enter Your Product Model: ", 5, "The Model is not valid.")
-        return ProductService.create_product(name, price, model,
-                                             seller)  # استفاده از seller که اطلاعات فروشنده را نمایندگی می‌کند
+        return ProductService.create_product(name, price, model, current_user)  # Use the current user to create product
     except ValueError as ve:
         return Response("NOT_OK", 601, None, str(ve))
 
@@ -99,35 +99,39 @@ def show_product_list() -> None:
             print(f"- {product.name}: {product.price} {product.currency}")
 
 
+current_user = None  # Global variable to track the current logged-in user
+
+# Updating `login_user` to set current_user when login is successful
 def login_user(db_config) -> Response:
     """Log in a user."""
+    global current_user
     username = input("Enter your username: ")
     password = input("Enter your password: ")
     user_service = UserService(db_config=db_config)
 
     reaction = user_service.login(username, password)
     if reaction.status == "OK":
-        current_user = reaction.data
+        current_user = reaction.data  # Store the user data upon successful login
         print(f"Welcome {username}!")
-        return Response("ok", 200, reaction.data, "login was successful")
+        return Response("ok", 200, reaction.data, "Login was successful")
     else:
         print("Login failed: ", reaction.message)
-        return Response("not ok", 601, reaction.data, "login was not successful.")
+        return Response("not ok", 601, reaction.data, "Login was not successful.")
 
 
 def signin_user(db_config) -> Response:
     """Sign in a new user."""
-    username = validate_input("Enter your username: ", 5,
-                              "The Username does not meet requirements.")
-    password = validate_input("Enter your password: ", 5,
-                              "The password does not meet requirements.")
-    nationality_code = validate_input("Enter your nationality code: ", 10,
-                                      "The nationality code is not valid.")
+    global current_user
+
+    username = validate_input("Enter your username: ", 5, "The Username does not meet requirements.")
+    password = validate_input("Enter your password: ", 5, "The password does not meet requirements.")
+    nationality_code = validate_input("Enter your nationality code: ", 10, "The nationality code is not valid.")
 
     user_service = UserService(db_config=db_config)
     reaction = user_service.save(username, password, nationality_code)
 
     if reaction.status == "OK":
+        current_user = reaction.data  # Store user data upon successful sign-in
         print(f"Registration was successful for {username}!")
         return Response("ok", 200, reaction.data, "Registration was successful")
     else:
